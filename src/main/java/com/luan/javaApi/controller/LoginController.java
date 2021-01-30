@@ -1,5 +1,6 @@
 package com.luan.javaApi.controller;
 
+import com.luan.javaApi.domain.Message;
 import com.luan.javaApi.domain.User;
 import com.luan.javaApi.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -28,12 +29,12 @@ public class LoginController {
             boolean exists = userService.existsUserByEmail(user.getEmail());
 
             if(exists){
-                return new ResponseEntity<>("Email ja existente", HttpStatus.CONFLICT);
+                return new ResponseEntity<>(new Message("Email ja existente"), HttpStatus.CONFLICT);
             }else{
                 user = userService.create(user);
             }
         }else{
-            return new ResponseEntity<>("Dados faltantes para a criação", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Message("Dados faltantes para a criação"), HttpStatus.BAD_REQUEST);
         }
 
         return new ResponseEntity<>(user, HttpStatus.OK);
@@ -49,10 +50,10 @@ public class LoginController {
             if(userlogin.get().getPassword().equals(user.getPassword())){
                 return new ResponseEntity<>(userlogin, HttpStatus.OK);
             }else{
-                return new ResponseEntity<>("Usuário e/ou senha inválidos", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity<>(new Message("Usuário e/ou senha inválidos"), HttpStatus.UNAUTHORIZED);
             }
         }else{
-            return new ResponseEntity<>("Usuário e/ou senha inválidos", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new Message("Usuário e/ou senha inválidos"), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -64,7 +65,7 @@ public class LoginController {
         String token = request.getHeader("Authorization");
         try{
             if(token == null){
-                return new ResponseEntity<>("Não autorizado", HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity<>(new Message("Não autorizado"), HttpStatus.UNAUTHORIZED);
             }else{
                 Optional<User> user = userService.findById(id);
                 if(user.isPresent()){
@@ -72,17 +73,17 @@ public class LoginController {
                         if(ChronoUnit.MINUTES.between(new Date().toInstant(), user.get().getLastLogin().toInstant()) <= 30){
                             return new ResponseEntity<>(user, HttpStatus.OK);
                         }else{
-                            return new ResponseEntity<>("Sessão inválida", HttpStatus.UNAUTHORIZED);
+                            return new ResponseEntity<>(new Message("Sessão inválida"), HttpStatus.UNAUTHORIZED);
                         }
                     }else{
-                        return new ResponseEntity<>("Não autorizado", HttpStatus.UNAUTHORIZED);
+                        return new ResponseEntity<>(new Message("Não autorizado"), HttpStatus.UNAUTHORIZED);
                     }
                 }else{
-                    return new ResponseEntity<>("Usuario não encontrado", HttpStatus.BAD_REQUEST);
+                    return new ResponseEntity<>(new Message("Usuario não encontrado"), HttpStatus.BAD_REQUEST);
                 }
             }
         } catch (IllegalArgumentException exception){
-            return new ResponseEntity<>("Token invalido", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Message("Token invalido"), HttpStatus.BAD_REQUEST);
         }
     }
 }
