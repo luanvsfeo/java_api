@@ -48,6 +48,8 @@ public class LoginController {
 
         if(userlogin.isPresent()){
             if(userlogin.get().getPassword().equals(user.getPassword())){
+                userlogin.get().updateLastLogin();
+                userService.update(userlogin.get());
                 return new ResponseEntity<>(userlogin, HttpStatus.OK);
             }else{
                 return new ResponseEntity<>(new Message("Usuário e/ou senha inválidos"), HttpStatus.UNAUTHORIZED);
@@ -59,7 +61,7 @@ public class LoginController {
 
 
 
-    @PostMapping("/user/{id}")
+    @GetMapping("/user/{id}")
     public ResponseEntity<?> userProfile(@PathVariable("id") Long id, HttpServletRequest request){
 
         String token = request.getHeader("Authorization");
@@ -70,7 +72,7 @@ public class LoginController {
                 Optional<User> user = userService.findById(id);
                 if(user.isPresent()){
                     if(user.get().getToken().equals(UUID.fromString(token))){
-                        if(ChronoUnit.MINUTES.between(new Date().toInstant(), user.get().getLastLogin().toInstant()) <= 30){
+                        if(ChronoUnit.MINUTES.between(user.get().getLastLogin().toInstant(), new Date().toInstant()) < 30){
                             return new ResponseEntity<>(user, HttpStatus.OK);
                         }else{
                             return new ResponseEntity<>(new Message("Sessão inválida"), HttpStatus.UNAUTHORIZED);
