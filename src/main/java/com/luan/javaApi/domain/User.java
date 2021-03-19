@@ -1,6 +1,8 @@
 package com.luan.javaApi.domain;
 
+import com.luan.javaApi.utils.StringUtils;
 import javax.persistence.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -126,9 +128,18 @@ public class User {
         this.created = date;
         this.lastLogin = date;
         this.token = UUID.randomUUID();
+        this.generateCriptoredPassword();
     }
 
     public void updateLastLogin(){
         this.lastLogin = new Date();
+    }
+
+    public boolean isSessionValid(){
+        return ChronoUnit.MINUTES.between(this.getLastLogin().toInstant(), new Date().toInstant()) < 30;
+    }
+
+    public void generateCriptoredPassword() {
+       this.password = StringUtils.generateCriptoredPassword(this.password);
     }
 }

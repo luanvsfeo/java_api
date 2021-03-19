@@ -2,21 +2,20 @@ package com.luan.javaApi.controller;
 
 import com.luan.javaApi.domain.Message;
 import com.luan.javaApi.domain.User;
+import com.luan.javaApi.enumx.MessageDefault;
 import com.luan.javaApi.service.UserService;
+import com.luan.javaApi.utils.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 public class LoginController {
 
-    private UserService userService;
+    private final UserService userService;
 
     public LoginController(UserService userService) {
         this.userService = userService;
@@ -29,12 +28,12 @@ public class LoginController {
             boolean exists = userService.existsUserByEmail(user.getEmail());
 
             if(exists){
-                return new ResponseEntity<>(new Message("Email ja existente"), HttpStatus.CONFLICT);
+                return new ResponseEntity<>(new Message(MessageDefault.EMAIL_EXISTS.getMensagem()), MessageDefault.EMAIL_EXISTS.getStatus());
             }else{
                 user = userService.create(user);
             }
         }else{
-            return new ResponseEntity<>(new Message("Dados faltantes para a criação"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Message(MessageDefault.MISSING_CORE_ATTRIBUTES.getMensagem()), MessageDefault.MISSING_CORE_ATTRIBUTES.getStatus());
         }
 
         return new ResponseEntity<>(user, HttpStatus.OK);
@@ -47,15 +46,14 @@ public class LoginController {
         Optional<User> userlogin = userService.findByEmail(user.getEmail());
 
         if(userlogin.isPresent()){
-            if(userlogin.get().getPassword().equals(user.getPassword())){
-                userlogin.get().updateLastLogin();
+            if(StringUtils.compareCriptedPasswordWithNoCriptedPassword(userlogin.get().getPassword(), user.getPassword())){
                 userService.update(userlogin.get());
                 return new ResponseEntity<>(userlogin, HttpStatus.OK);
             }else{
-                return new ResponseEntity<>(new Message("Usuário e/ou senha inválidos"), HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity<>(new Message(MessageDefault.INVALID_USER_OR_PASSWORD), HttpStatus.UNAUTHORIZED);
             }
         }else{
-            return new ResponseEntity<>(new Message("Usuário e/ou senha inválidos"), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new Message(MessageDefault.INVALID_USER_OR_PASSWORD), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -65,27 +63,13 @@ public class LoginController {
     public ResponseEntity<?> userProfile(@PathVariable("id") Long id, HttpServletRequest request){
 
         String token = request.getHeader("Authorization");
-        try{
-            if(token == null){
-                return new ResponseEntity<>(new Message("Não autorizado"), HttpStatus.UNAUTHORIZED);
-            }else{
-                Optional<User> user = userService.findById(id);
-                if(user.isPresent()){
-                    if(user.get().getToken().equals(UUID.fromString(token))){
-                        if(ChronoUnit.MINUTES.between(user.get().getLastLogin().toInstant(), new Date().toInstant()) < 30){
-                            return new ResponseEntity<>(user, HttpStatus.OK);
-                        }else{
-                            return new ResponseEntity<>(new Message("Sessão inválida"), HttpStatus.UNAUTHORIZED);
-                        }
-                    }else{
-                        return new ResponseEntity<>(new Message("Não autorizado"), HttpStatus.UNAUTHORIZED);
-                    }
-                }else{
-                    return new ResponseEntity<>(new Message("Usuario não encontrado"), HttpStatus.BAD_REQUEST);
-                }
-            }
-        } catch (IllegalArgumentException exception){
-            return new ResponseEntity<>(new Message("Token invalido"), HttpStatus.BAD_REQUEST);
+        Optional<User> user = userService.findById(id);
+        MessageDefault message =  userService.isInvalid(token, user.orElse(null));
+
+        if(message == null){
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>(new Message(message), message.getStatus());
         }
     }
 }
