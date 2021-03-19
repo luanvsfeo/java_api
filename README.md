@@ -1,4 +1,17 @@
-# Endpoints
+# Desafio Java - Concrete
+Criar uma aplicação que exponha uma API RESTful de criação de usuários e login.
+
+## Funções disponiveis na API
+ - Criação de usuario
+ - Login
+ - Visualização de perfil do usuario
+
+## Tecnologias utilizadas
+ - Spring boot
+ - JPA/Hibernate
+ - H2
+
+### Endpoints disponiveis no heroku
 
 |HTTP| Urls                            | 
 |----|-----------------------------------------------|
@@ -7,7 +20,7 @@
 |GET | https://user-api-teste.herokuapp.com/user/{id} |  
 
 
-# Jsons para teste 
+### Jsons para teste 
 
 ```
     {
